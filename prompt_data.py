@@ -51,11 +51,20 @@ summarise = {"name":"Summary",
 is_human = {"name":"Human",
            "system":default_system_prompt,
            "prompts":
-               ["Is the following paper a study about humans? This includes human tissue or human diseases.  Answer yes or no. The paper is [summary]" ,
+               ["Is the following paper a study involved with humans? This includes human tissue or diseases in humans (homo sapiens).  Answer yes or no. The paper is [summary]" ,
                 yes_or_no],
            "check": is_yes,
            "dataOut": "isHuman"
            }
+
+get_software = {"name":"methods",
+           "system":default_system_prompt,
+           "prompts":
+               ["Is the following methods section, what software was used for a protein search engine was employed?  Popular examples include ProteomeDiscoverer / Mascot, MaxQuant or Fragpipe.  This is not an exhaustive list, other software may be available.  The section to analyze is [methods]", "Convert the following text into a comma-separated list of software names, including version numbers, with no other commentary - this will be used in automated analysis. If no specific software is identified, give an empty list. [reply]" ],
+           "check": always_true,
+           "dataOut": "software"
+           }
+
 is_phospho = {"name":"Phospho",
            "system":default_system_prompt,
            "prompts":
@@ -72,12 +81,12 @@ count_phospho = {"name":"Phospho Count",
             "putVariable": "phosphoCountFirst",
            "check": always_true}
 
-count_phospho_2 = {"name":"Phospho Count2",
+count_phospho_check = {"name":"Phospho Count2",
            "system":default_system_prompt,
            "preCheck": num_check,
            "prompts":
                [
-                "I wish to verify the number in this generated text.  Express it exactly as a single number: 0 if there are none, of if there is an unknown number, put 99. If it already numeric, do not change the number. The generated text is [phosphoCountFirst]"
+                "I wish to verify the number in this generated text.  Express it exactly as a single number: 0 if there are none, of if there is an unknown number, put 99. If it is already numeric, do not change the number. The generated text is [phosphoCountFirst]"
                 ],
                 "dataOut": "PhosphoCount",
            "check": make_numeric}
@@ -86,4 +95,4 @@ count_phospho_2 = {"name":"Phospho Count2",
 # prompt_data defines the structure you will use (the order of the prompts)
 
 
-prompt_data = [summarise, is_human, is_phospho, count_phospho, count_phospho_2]
+prompt_data = [summarise, is_human, get_software, is_phospho, count_phospho, count_phospho_check]

@@ -114,13 +114,17 @@ def process_line(line):
     return answer
 
 
-def process_text(pmid,text):
+def process_document(pmid,document_data):
 
+    text = document_data["text"]
+    sections = document_data["sections"]
 
     result = None
     self_data.reply_count = 0
     self_data.output_data = {}
     self_data.data_store = {"paper": text}
+    for section in sections:
+        self_data.data_store[section] = sections[section]
 
     print(f"Processing {pmid}")
     for process in prompt_data:
@@ -188,21 +192,22 @@ def fetch_pubmed_data(pubmed_id, sections_to_extract, data_folder):
     # Extract the relevant sections from the JSON data
 
     parsed_data = parse_pubmed_data(data, sections_to_extract)
-    extracted_text = parsed_data["text"]
 
-    return extracted_text
+
+    return parsed_data
 
 
 
 
 # Function to process each PubMed ID
 def process_pubmed_id(pubmed_id, processed_documents, sections_to_extract, data_folder):
-    document_text = fetch_pubmed_data(pubmed_id, sections_to_extract, data_folder)
+    document_data  = fetch_pubmed_data(pubmed_id, sections_to_extract, data_folder)
+    document_text = document_data.get("text")
 
     if document_text:
         if len(document_text) > 1:
             processed_documents.append(document_text)
-            result = process_text(pubmed_id,document_text)
+            result = process_document(pubmed_id,document_data)
             if result:
                 self_data.final_output[pubmed_id] = result
 
