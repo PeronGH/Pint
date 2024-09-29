@@ -218,8 +218,6 @@ def normalize_newlines(text):
 def output_csv(output_data,outputfile):
     columns = set()
     for key in output_data:
-        print("key",key)
-       # print("data",output_data[key])
         columns.update(output_data[key].keys())
 
     # Convert the set to a sorted list to maintain column order
