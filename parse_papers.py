@@ -8,21 +8,16 @@ from types import SimpleNamespace
 
 from parse_pubmed_json import parse_pubmed_data
 from prompt_data import prompt_data
+from prompt_data import model_data
 
-# - The things you are likely so set are here
 # ** prompt_data.py ** is where all of the prompts, checks and structure is defined
 
-# "claude" or "openai"
-WHICH_API = "claude"
-USE_PUBMED_API = True
-# You can either pass the key as text, ("sk-proj...") or if None, it will look for an environment variable
-# ANTHROPIC_API_KEY or OPENAI_API_KEY
-API_KEY = None
+which_api = model_data["model"]
 
-file_path = 'data/Human phosphorylation datasets 2024.csv'
-column_name = 'pubmed_id'  # Name of the column containing PubMed IDs
-# The pubmed sections to extract - if None, it will extract all
-sections_to_extract = ["abstract",  "intro", "methods", "results", "discuss",]
+API_KEY = model_data["api_key"]
+file_path = model_data["file"]
+column_name = model_data["column_name"]
+sections_to_extract = model_data["sections"]
 
 # The output file name is based on the input file name just for convenience
 output_file = file_path + '_output.csv'  # Path to the output CSV file
@@ -31,12 +26,13 @@ output_file_json = file_path + '_output.json'  # Path to the output CSV file
 debug_output_file = file_path + '_output_debug.csv'  # Path to the output CSV file
 debug_output_file_json = file_path + '_output_debug.json'  # Path to the output CSV file
 
-# You can either pass the key as text, (key="sk-proj...") or it will look for an environment variable
-if WHICH_API == "claude":
+if which_api == "claude":
     from claudeEngine import ClaudeEngine
-if WHICH_API == "openai":
+if which_api == "openai":
     from openAIEngine import OpenAIEngine
 
+# There is an alternative to use a local script to get pubmed data
+USE_PUBMED_API = True
 
 # Responses are stored so that they are not repeated later
 # If you want to clear the cache, delete the cache folder, or you can change the key in the specific api file
@@ -53,10 +49,10 @@ self_data.debug = {}
 print("starting...")
 
 def setup():
-    if WHICH_API == "claude":
+    if which_api == "claude":
         self_data.llm_engine = ClaudeEngine(
         key=API_KEY, cache_folder=cache_folder)
-    if WHICH_API == "openai":
+    if which_api == "openai":
         self_data.llm_engine = OpenAIEngine(key=API_KEY, cache_folder=cache_folder)
     os.makedirs(data_folder, exist_ok=True)
     os.makedirs(cache_folder, exist_ok=True)

@@ -4,8 +4,9 @@ import anthropic
 import json
 
 import hashlib
+from prompt_data import model_data
+model_engine = model_data["model_name"]
 
-model_engine = "claude-3-haiku-20240307"
 
 class ClaudeEngine:
     def __init__(self, key=None, cache_folder="cache"):

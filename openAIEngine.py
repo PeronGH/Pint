@@ -2,13 +2,13 @@ import os
 from openai import OpenAI
 import json
 import hashlib
+from prompt_data import model_data
 
-# The model you want to use (GPT-4 in this case)
-model_engine = "gpt-4-turbo"
+model_engine = model_data["model_name"]
 
 class OpenAIEngine:
     def __init__(self, key=None, cache_folder="cache"):
-        # Set the OpenAI API key either from input or from environment variables
+
         if key is None:
             key = os.environ.get("OPENAI_API_KEY")
 
@@ -16,7 +16,6 @@ class OpenAIEngine:
         self.cache_folder = cache_folder
 
     def prompt(self, prompt, system=""):
-        """Send a user prompt to the model with an optional system message."""
 
         messages = [
             {"role": "system", "content": system},
@@ -25,8 +24,9 @@ class OpenAIEngine:
         response = self.create_chat_completion(messages)
         return response["choices"][0]["message"]["content"]
 
+    # create_chat_completion is used internally for API compatibility
     def create_chat_completion(self, messages):
-        """Handle chat completion creation with caching support."""
+
         # Build a cache key using the model engine, system, and prompt
         key = ".".join(["prompt-caching-v1", model_engine, messages[0]['content'], messages[1]['content']])
         hash_key = hashlib.md5(key.encode()).hexdigest()
@@ -37,22 +37,18 @@ class OpenAIEngine:
             with open(filename, "r") as file:
                 cached_message = json.load(file)
         else:
-            # If not cached, make the API call to OpenAI's new unified completions endpoint
             response = self.client.chat.completions.create(
                 model=model_engine,
                 messages=messages,
-                max_tokens=4024,  # Adjust token limit based on your needs
-                temperature=0,  # Optional: Adjust creativity level
-                n=1,  # Optional: Number of completions to generate
+                max_tokens=4024,
+                temperature=0,
+                n=1,
             )
 
-            # Cache the response for future use
             content = response.choices[0].message.content
-
 
             cached_message = {"message": {"content": content}}
             with open(filename, "w") as file:
                 json.dump(cached_message, file)
 
-        # Wrap the cached message into a format similar to the API response
         return {"choices": [cached_message]}

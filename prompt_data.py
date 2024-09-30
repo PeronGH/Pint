@@ -1,4 +1,22 @@
 import re
+
+#model is openai or claude
+#model_name gets passed to the api
+#api_key - your api key as text, ("sk-proj...") or if None, it will look for an environment variable - ANTHROPIC_API_KEY or OPENAI_API_KEY
+#file_path is the path to a csv containing pubmed ids
+#column_name is the name of the column that contains the pubmed if
+#sections_to_extract is the sections of the paper to extract - If None it will extract all of the sections.  These sections can be referred to individually in the prompts
+
+
+model_data = {
+    "model": "openai",
+    "model_name": "gpt-4-turbo",
+    "api_key": None,
+    "file" : 'data/Human phosphorylation datasets 2024.csv',
+    "column_name" : 'pubmed_id',
+    "sections" : ["abstract", "intro", "methods", "results", "discuss", ]
+
+}
 # Define your prompting structure here:
 
 # Functions are used to check if the process should terminate by checking the previous output
