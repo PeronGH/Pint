@@ -2,7 +2,7 @@ import re
 
 #model is openai or claude
 #model_name gets passed to the api
-#api_key - your api key as text, ("sk-proj...") or if None, it will look for an environment variable - ANTHROPIC_API_KEY or OPENAI_API_KEY
+#api_key - your api key as text, ("sk-proj...") or if None, it will look for an environment variable - OPENAI_API_KEY or ANTHROPIC_API_KEY
 #file_path is the path to a csv containing pubmed ids
 #column_name is the name of the column that contains the pubmed if
 #sections_to_extract is the sections of the paper to extract - If None it will extract all of the sections.  These sections can be referred to individually in the prompts

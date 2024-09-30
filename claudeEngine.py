@@ -32,10 +32,10 @@ class ClaudeEngine:
             if m["role"] == "system":
                 system += m["content"]
 
-        key = ".".join(["prompt-caching-v1", model_engine, system, prompt])
+        hashkey = ".".join(["prompt-caching-v1", model_engine, system, prompt])
 
 
-        hash = hashlib.md5(key.encode()).hexdigest()
+        hash = hashlib.md5(hashkey.encode()).hexdigest()
 
         filename = f"{self.cache_folder}/{hash}.json"
         if os.path.exists(filename):

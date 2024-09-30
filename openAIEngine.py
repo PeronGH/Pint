@@ -28,8 +28,8 @@ class OpenAIEngine:
     def create_chat_completion(self, messages):
 
         # Build a cache key using the model engine, system, and prompt
-        key = ".".join(["prompt-caching-v1", model_engine, messages[0]['content'], messages[1]['content']])
-        hash_key = hashlib.md5(key.encode()).hexdigest()
+        hashkey = ".".join(["openai-prompt-caching-v1", model_engine, messages[0]['content'], messages[1]['content']])
+        hash_key = hashlib.md5(hashkey.encode()).hexdigest()
         filename = f"{self.cache_folder}/{hash_key}.json"
 
         # If the response is cached, load it from the cache
