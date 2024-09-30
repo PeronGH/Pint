@@ -9,8 +9,8 @@ import re
 
 
 model_data = {
-    "model": "openai",
-    "model_name": "gpt-4-turbo",
+    "model": "claude",
+    "model_name": "claude-3-haiku-20240307",
     "api_key": None,
     "file" : 'data/Human phosphorylation datasets 2024.csv',
     "column_name" : 'pubmed_id',
