@@ -14,7 +14,7 @@ model_data = {
     "api_key": None,
     "file" : 'data/Human phosphorylation datasets 2024.csv',
     "column_name" : 'pubmed_id',
-    "sections" : ["abstract", "intro", "methods", "results", "discuss", ]
+    "sections" : ["abstract", "intro", "methods", "results", "discuss","concl" ]
 
 }
 # Define your prompting structure here:
