@@ -4,6 +4,7 @@ import requests
 import os
 import json
 import subprocess
+import pdfplumber
 from types import SimpleNamespace
 
 from parse_pubmed_json import parse_pubmed_data
@@ -30,7 +31,8 @@ if which_api == "claude":
     from claudeEngine import ClaudeEngine
 if which_api == "openai":
     from openAIEngine import OpenAIEngine
-
+if which_api == "external":
+    from externalEngine import ExternalEngine
 # There is an alternative to use a local script to get pubmed data
 USE_PUBMED_API = True
 
@@ -54,6 +56,9 @@ def setup():
         key=API_KEY, cache_folder=cache_folder)
     if which_api == "openai":
         self_data.llm_engine = OpenAIEngine(key=API_KEY, cache_folder=cache_folder)
+    if which_api == "external":
+            self_data.llm_engine = ExternalEngine(cache_folder=cache_folder)
+
     os.makedirs(data_folder, exist_ok=True)
     os.makedirs(cache_folder, exist_ok=True)
  
@@ -136,6 +141,22 @@ def process_document(pmid,document_data):
 
     return result
 
+def get_text_from_local(filename):
+    if filename.lower.endswith(".pdf"):
+        with pdfplumber.open(filename) as pdf:
+            all_text = ""
+            for page in pdf.pages:
+                # Extract text from each page
+                all_text += page.extract_text() + "\n
+    else:
+        with open(filename, 'r') as file:
+            all_text = file.read()
+
+    data = {"text": all_text, sections : {}}
+
+    return data
+
+
 def get_pubmed_from_local(pubmed_id):
     script_path ="/mnt/hc-storage/groups/cbf/tony/share/pubmed/get_pmid"
 
@@ -177,10 +198,15 @@ def fetch_pubmed_data(pubmed_id, sections_to_extract, data_folder):
             data = json.load(json_file)
     else:
         # Fetch the data from PubMed API (alternative is a local script)
-        if USE_PUBMED_API:
-            data = get_pubmed_from_api(pubmed_id)
+        if pubmed_id.endswith(".pdf"):
+            data =  get_text_from_local(pubmed_id)
+        elif pubmed_id.endswith(".txt"):
+            data =  get_text_from_local(pubmed_id)
         else:
-            data = get_pubmed_from_local(pubmed_id)
+            if USE_PUBMED_API:
+                data = get_pubmed_from_api(pubmed_id)
+            else:
+                data = get_pubmed_from_local(pubmed_id)
 
         with open(json_file_path, 'w', encoding='utf-8') as json_file:
             json.dump(data, json_file, ensure_ascii=False, indent=4)
