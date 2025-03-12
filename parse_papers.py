@@ -9,6 +9,8 @@ import pdfplumber
 import openpyxl
 import base64
 import shlex
+import requests
+
 
 from model_data import model_data
 
@@ -19,10 +21,7 @@ from prompt_data import prompt_data
  
 import re
 
-import resource
 
-# Set the stack size limit to unlimited (or any other value in bytes)
-resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
 
 def is_one_token(s):
@@ -393,7 +392,7 @@ def process_line(line):
              
             self_data.output_data[name] = result
 
-
+            
             if name not in ordered_column_list:
                 ordered_column_list.append(name)
     else:
@@ -683,6 +682,8 @@ def save_output(data, csv_file, json_file):
     
     try:
         output_csv(data, csv_file)
+    except KeyboardInterrupt:        
+        pass
     except Exception as e:
         print("error",csv_file)
         print(e)
@@ -691,6 +692,9 @@ def save_output(data, csv_file, json_file):
     try:
         with open(json_file, 'w', encoding='utf-8') as json_out:
             json.dump(data, json_out, indent=4)
+    except KeyboardInterrupt:        
+        pass
+
     except Exception as e:
 
         print("error",json_file)
@@ -719,8 +723,12 @@ def process_pubmed_ids(pubmed_ids, sections_to_extract, data_folder):
     for pubmed_id in pubmed_ids:
         try:
             process_pubmed_id(pubmed_id, processed_documents, sections_to_extract, data_folder)
+        except KeyboardInterrupt:
+            raise  
         except:
             print("error with",pubmed_id)
+            traceback.print_exc(file=sys.stdout)
+
         if len(self_data.final_output) > 1:
             save_output(self_data.final_output, output_file, output_file_json)
             save_output(self_data.debug, debug_output_file, debug_output_file_json)
