@@ -2,11 +2,14 @@ import re
 import csv
 import json
 import openpyxl
-       # use_pubmed_api : "true"
-from model_data import model_data       
+from model_data import get_model_data       
+
+
+#parses the prompts spreadsheet into the data format already used
+#see end of file for format description
 
 def process_rows(rows, headers):
-    """Common function to process rows into the desired dictionary format."""
+    
     prompts = []
     standard_fields = ["name", "system", "skipPrompt", "skipTest"]
 
@@ -48,19 +51,34 @@ def read_prompt_xlsx(file_path):
 
     return process_rows(rows, headers)
 
-def read_prompt_tsv(file_path):
+def read_prompt_tsv(file_path, delimiter='\t'):
     with open(file_path, newline='', encoding='utf-8') as tsvfile:
-        reader = csv.reader(tsvfile, delimiter='\t')
+        reader = csv.reader(tsvfile, delimiter=delimiter)
         headers = [str(header) for header in next(reader)]  # Convert headers to strings
         rows = [[str(cell) if cell else "" for cell in row] for row in reader]  # Convert all values to strings
 
     return process_rows(rows, headers)
 
-# prompt_data = read_prompt_tsv("prompts.tsv")
 
 
-prompt_data = read_prompt_xlsx(model_data["prompt_data"])
+def read_prompt(file_path):
+    if file_path.lower().endswith(".xlsx"):
+        return read_prompt_xlsx(file_path)
+    if file_path.lower().endswith(".csv"):
+        return read_prompt_tsv(file_path,delimiter=',')
+    return read_prompt_tsv(file_path)
+    
+prompt_data = None
 
+def load_prompt_data():
+    global prompt_data
+    model_data = get_model_data()
+    print("load prompts from",model_data["prompt_data"])
+    prompt_data = read_prompt(model_data["prompt_data"])
+
+
+def get_prompt_data():
+    return prompt_data
 
 
 

@@ -1,7 +1,7 @@
 import csv
 model_data = {}
 
-import openpyxl
+
     
 def process_rows(rows):
     global model_data
@@ -28,13 +28,20 @@ def load_model_data(filename):
     global model_data
     model_data = {}
 
-    if filename.endswith(".csv"):
+    if filename.lower().endswith(".csv"):
         with open(filename, "r", newline="") as f:
             reader = csv.reader(f)
             process_rows(reader)
-    elif filename.endswith(".xlsx"):
+    elif filename.lower().endswith(".xlsx"):
+        try:
+            import openpyxl
+        except:
+            raise RuntimeError("To use an Excel file openpyxl must be installed.  csv files need no other libraries.")           
         wb = openpyxl.load_workbook(filename, data_only=True)
         sheet = wb.active
         process_rows(sheet.iter_rows(values_only=True))
     
-    print(model_data)
+ 
+    
+def get_model_data():
+    return model_data

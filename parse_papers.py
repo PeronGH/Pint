@@ -1,97 +1,37 @@
-
 import traceback
 import csv
 import os
 import json
 import subprocess
 import sys
-import pdfplumber
-import openpyxl
-import base64
+#pdfminer.six
 import shlex
-import requests
-
-
-from model_data import model_data
+import re
 
 from types import SimpleNamespace
 
+from model_data import get_model_data
+from model_data import load_model_data
+from prompt_data import get_prompt_data
+from prompt_data import load_prompt_data
 from parse_pubmed_json import parse_pubmed_data
-from prompt_data import prompt_data
+
+from claude_engine import ClaudeEngine
+from open_ai_engine import OpenAIEngine
+from external_engine import ExternalEngine
  
-import re
-
-
-
 
 def is_one_token(s):
     return bool(re.fullmatch(r"\[\w+\]", s))
 
-# ** prompt_data.py ** is where all of the prompts, checks and structure is defined
-
-which_api = model_data["model"]
-
-API_KEY = model_data.get("api_key")
-DATA_FOLDER = model_data.get("files_folder","files")
 DEFAULT_MAX_PROMPT_LENGTH = 100000
-MAX_PROMPT_LENGTH = model_data.get("max_prompt_length",DEFAULT_MAX_PROMPT_LENGTH)
-MAX_PROMPT_LENGTH = int(MAX_PROMPT_LENGTH)
-MAX_DOC_LENGTH = model_data.get("max_document_length",sys.maxsize)
-MAX_DOC_LENGTH = int(MAX_DOC_LENGTH)
-
-
-if which_api == "claude":
-    from claudeEngine import ClaudeEngine
-if which_api == "openai":
-    from openAIEngine import OpenAIEngine
-if which_api == "external":
-    from externalEngine import ExternalEngine
-column_name = "pubmed_id"
-
-
-
-# There is an alternative to use a local script to get pubmed data
-USE_PUBMED_API = True
-if "use_pubmed_api" in model_data:
-    if model_data["use_pubmed_api"].strip().lower() == "false":
-        USE_PUBMED_API = False
-
-USE_PUBMED_SEARCH = False
-
-if "use_pubmed_search" in model_data:
-    if model_data["use_pubmed_search"].strip().lower() == "true":
-        USE_PUBMED_SEARCH = True
-
-
-# Responses are stored so that they are not repeated later
-# If you want to clear the cache, delete the cache folder, or you can change the key in the specific api file
-
-data_cache_folder = model_data.get("data_cache_folder", "cache/data")
-cache_folder = model_data.get("cache_folder", "cache/api")
-
+DEFAULT_MAX_TOKENS = 4096
 
 self_data =  SimpleNamespace()
+model_data = {}
 
-self_data.data_store = {}
-self_data.output_data = {}
-self_data.final_output = {}
-self_data.debug = {}
 print("starting...")
-ordered_column_list = []
-self_data.script_returncode = 0
 
-def setup():
-    if which_api == "claude":
-        self_data.llm_engine = ClaudeEngine(
-        key=API_KEY, cache_folder=cache_folder)
-    if which_api == "openai":
-        self_data.llm_engine = OpenAIEngine(key=API_KEY, cache_folder=cache_folder)
-    if which_api == "external":
-        self_data.llm_engine = ExternalEngine(cache_folder=cache_folder)
-    os.makedirs(data_cache_folder, exist_ok=True)
-    os.makedirs(cache_folder, exist_ok=True)
- 
-precheck_system = "You are helping to automate a workflow.  You will be asked a question to verify the information you have given. You must only answer the question as Yes or No, so that automated processing can continue. Any answer except the single word Yes will be treated as a No. "
 
 def isYes(answer,param):
     text = answer.lower().strip()
@@ -177,6 +117,101 @@ prechecks = {"is_yes": isYes, "is_no": isNo, "is_number": isNumber, "is_json": i
 
 }
 
+
+
+
+
+def setup_data():
+    global model_data
+    model_data = get_model_data()
+    print(model_data)
+    
+    self_data.precheck_system = "You are helping to automate a workflow.  You will be asked a question to verify the information you have given. You must only answer the question in EXACTLY the format requested. The answer will only ever be read by a computer, NEVER add any other commentary or automated processing will fail. It is more important to give a correctly formatted answer than to be sure the answer is correct."
+    self_data.precheck_system = model_data.get("precheck_system",self_data.precheck_system)
+    self_data.max_tokens = model_data.get("max_tokens",DEFAULT_MAX_TOKENS)
+    
+    self_data.model_data = model_data
+
+    self_data.which_api = model_data["model"]
+
+    self_data.api_key = model_data.get("api_key")
+    self_data.data_folder = model_data.get("files_folder","files")
+    if self_data.data_folder == []:
+        self_data.data_folder = "."
+
+
+    self_data.max_prompt_length = model_data.get("max_prompt_length",DEFAULT_MAX_PROMPT_LENGTH)
+    self_data.max_prompt_length = int(self_data.max_prompt_length)
+    self_data.max_doc_length = model_data.get("max_document_length",sys.maxsize)
+    self_data.max_doc_length = int(self_data.max_doc_length)
+
+
+
+
+    self_data.column_name = "pubmed_id"
+
+
+
+    # There is an alternative to use a local script to get pubmed data
+    self_data.use_pubmed_api = True
+    if "use_pubmed_api" in model_data:
+        if model_data.get("use_pubmed_api","false").strip().lower() == "false":
+            self_data.use_pubmed_api = False
+
+    self_data.use_pubmed_search = False
+
+    if "use_pubmed_search" in model_data:
+        if model_data.get("use_pubmed_search","").strip().lower() == "true":
+            self_data.use_pubmed_search = True
+
+
+    # Responses are stored so that they are not repeated later
+    # If you want to clear the cache, delete the cache folder, or you can change the key in the specific api file
+
+    self_data.data_cache_folder = model_data.get("self_data.data_cache_folder", "cache/data")
+    self_data.cache_folder = model_data.get("cache_folder", "cache/api")
+
+
+
+    self_data.data_store = {}
+    self_data.output_data = {}
+    self_data.final_output = {}
+    self_data.debug = {}
+
+    self_data.ordered_column_list = []
+    self_data.script_returncode = 0
+
+
+
+
+
+def setup():
+    
+    setup_data()
+    
+    os.makedirs(self_data.data_cache_folder, exist_ok=True)
+    os.makedirs(self_data.cache_folder, exist_ok=True)
+    
+    
+
+
+    if self_data.which_api == "claude":
+        self_data.llm_engine = ClaudeEngine(
+        key=self_data.api_key, cache_folder=self_data.cache_folder, max_tokens = self_data.max_tokens)
+    if self_data.which_api == "openai":
+        self_data.llm_engine = OpenAIEngine(key=self_data.api_key, cache_folder=self_data.cache_folder, max_tokens = self_data.max_tokens)
+    if self_data.which_api == "external":
+        self_data.llm_engine = ExternalEngine(cache_folder=self_data.cache_folder, max_tokens = self_data.max_tokens)
+    
+    
+        
+ 
+
+
+
+
+
+
 def preprocess_prompt_old(prompt,escape = False):
     
     
@@ -189,8 +224,10 @@ def preprocess_prompt_old(prompt,escape = False):
 
     return prompt
     
-def preprocess_prompt(prompt, max_length=MAX_PROMPT_LENGTH, escape=False, overlap=500):
+def preprocess_prompt(prompt, max_length=None, escape=False, overlap=500):
  
+    if max_length is None:
+        max_length = self_data.max_prompt_length
     # Track original text and substitutions for splitting later if needed
     substitutions = []
     result = prompt
@@ -352,7 +389,7 @@ def process_line(line):
     if line["skipTest"]:
         preCheck = line["skipPrompt"]
         
-        preCheckResult = get_text_from_prompt(preCheck, precheck_system)
+        preCheckResult = get_text_from_prompt(preCheck, self_data.precheck_system)
         preCheckTest = line["skipTest"].split()
         param = preCheckTest[1] if len(preCheckTest) > 1 else ""
     
@@ -392,9 +429,9 @@ def process_line(line):
              
             self_data.output_data[name] = result
 
-            
-            if name not in ordered_column_list:
-                ordered_column_list.append(name)
+
+            if name not in self_data.ordered_column_list:
+                self_data.ordered_column_list.append(name)
     else:
         print("No result for",name)
 
@@ -426,6 +463,8 @@ def process_document(pmid,document_data):
 
 
         print(f"Processing {pmid}")
+        prompt_data = get_prompt_data()
+        
         for process in prompt_data:
 
             result = process_line(process)
@@ -460,15 +499,21 @@ def get_pubmed_from_local(pubmed_id):
     return data
 
 def get_text_from_local(filename):
+
+    filename = os.path.join(self_data.data_folder,filename)
     
-    filename = os.path.join(DATA_FOLDER,filename)
+    
+
     
     if filename.lower().endswith(".pdf"):
-        with pdfplumber.open(filename) as pdf:
-            all_text = ""
-            for page in pdf.pages:
-                # Extract text from each page
-                all_text += page.extract_text() + "\n"
+        try:
+            from pdfminer.high_level import extract_text
+            all_text = extract_text(filename) 
+        except Exception as e:
+            print("Error processing pdf - pfminder.six must be installed, or use text or json files")
+            print(e)
+            traceback.print_exc(file=sys.stdout)     
+            
     elif filename.lower().endswith(".json"):
         with open(filename, 'r', encoding='utf-8') as file:
             data = json.load(file)
@@ -534,7 +579,7 @@ def fetch_pubmed_data(pubmed_id, sections_to_extract, data_folder):
         if is_pubmed:
                 
             # Fetch the data from PubMed API (alternative is a local script)
-            if USE_PUBMED_API:
+            if self_data.use_pubmed_api:
                 data = get_pubmed_from_api(pubmed_id)
             else:
                 data = get_pubmed_from_local(pubmed_id)
@@ -563,7 +608,7 @@ def process_pubmed_id(pubmed_id, processed_documents, sections_to_extract, data_
     
     print("got text",pubmed_id,len(document_text))
     #print(document_text
-    if len(document_text) > MAX_DOC_LENGTH:
+    if len(document_text) > self_data.max_doc_length:
         print("document too long")
         return
         
@@ -592,7 +637,7 @@ def output_csv_old(output_data,outputfile):
 
     # Convert the set to a sorted list to maintain column order
     columns = sorted(columns)
-
+    column_name = self_data.column_name
     # Step 2: Write to CSV
     with open(outputfile, 'w', newline='', encoding='utf-8' ) as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=[column_name] + columns,quoting=csv.QUOTE_ALL)
@@ -605,20 +650,20 @@ def output_csv_old(output_data,outputfile):
             normalized_row = {k: normalize_newlines(v) for k, v in row.items()}
 
             writer.writerow(normalized_row)
-import csv
+
  
 
 def output_csv(output_data, outputfile):
     columns = set()
     #column_name is the global for the key of the dictionary
-
+    column_name = self_data.column_name
     # Collect all possible columns from the nested dictionaries
     for key in output_data:
         columns.update(output_data[key].keys())
 
     # Ensure columns appear in the specified order, filtering only those present in output_data
-    ordered_columns = [col for col in ordered_column_list if col in columns]
-    extra_columns = sorted(columns - set(ordered_column_list))  # Additional columns in sorted order
+    ordered_columns = [col for col in self_data.ordered_column_list if col in columns]
+    extra_columns = sorted(columns - set(self_data.ordered_column_list))  # Additional columns in sorted order
     final_columns = ordered_columns + extra_columns  # Merge ordered and extra columns
 
     # Prepend the 'id' column for the key
@@ -654,6 +699,12 @@ def read_pubmed_ids(file_path, column_name):
             pubmed_ids = [row[column_name] for row in reader if row[column_name]]
 
     elif file_path.endswith('.xlsx'):
+        
+        try:
+            import openpyxl
+        except ModuleNotFoundError:
+            raise ValueError("To load Excel files openpyxl must be installed")
+  
         wb = openpyxl.load_workbook(file_path, data_only=True)
         sheet = wb.active
 
@@ -682,8 +733,6 @@ def save_output(data, csv_file, json_file):
     
     try:
         output_csv(data, csv_file)
-    except KeyboardInterrupt:        
-        pass
     except Exception as e:
         print("error",csv_file)
         print(e)
@@ -692,9 +741,6 @@ def save_output(data, csv_file, json_file):
     try:
         with open(json_file, 'w', encoding='utf-8') as json_out:
             json.dump(data, json_out, indent=4)
-    except KeyboardInterrupt:        
-        pass
-
     except Exception as e:
 
         print("error",json_file)
@@ -723,19 +769,19 @@ def process_pubmed_ids(pubmed_ids, sections_to_extract, data_folder):
     for pubmed_id in pubmed_ids:
         try:
             process_pubmed_id(pubmed_id, processed_documents, sections_to_extract, data_folder)
-        except KeyboardInterrupt:
-            raise  
-        except:
+        except Exception as e:
+            print(e)
             print("error with",pubmed_id)
             traceback.print_exc(file=sys.stdout)
-
-        if len(self_data.final_output) > 1:
+        if len(self_data.final_output) > 0:
             save_output(self_data.final_output, output_file, output_file_json)
             save_output(self_data.debug, debug_output_file, debug_output_file_json)
+        else:
+            print("no output",pubmed_id)
         
     print("Final Output")
     print(self_data.final_output)
-    print(ordered_column_list)
+    print(self_data.ordered_column_list)
 
 
 
@@ -759,34 +805,44 @@ def search_for_pubmed_ids(search_script, search_term,search_options):
             #search_term = base64.b64encode(search_term.encode()).decode()
 
         args = shlex.split(search_term)
-        result = subprocess.run([search_script]+args+["-csv"], capture_output=True, text=True, check=True)
+        result = subprocess.run([search_script]+args, capture_output=True, text=True, check=True)
         #result = subprocess.run([search_script, "-b", search_term], capture_output=True, text=True, check=True)
         result_text = result.stdout
         
-        pubmed_ids = result_text.splitlines()  
+        try:
+            #see if it is json
+            pubmed_ids = json.loads(result_text)
+            pubmed_ids = ["pmid"]+pubmed_ids
+        except:
+            pubmed_ids = result_text.splitlines()  
+            
     except subprocess.CalledProcessError as e:
         print("Error running search script")
         print(e)
 
     return pubmed_ids[1:],pubmed_ids[0]
 
-def parse_papers():
-    global column_name
+def parse_papers(config_file):
+ 
 
+    load_model_data(config_file)   
+
+ 
     setup()
-
-    if USE_PUBMED_SEARCH:
+    
+    load_prompt_data()
+    if self_data.use_pubmed_search:
         search_script = model_data.get("pubmed_search_script")
         search_term = model_data.get("pubmed_search_term")
-        search_options = model_data.get("pubmed_search_options")
+        search_options = model_data.get("pubmed_search_options","")
 
-        pubmed_ids, column_name = search_for_pubmed_ids(search_script, search_term,search_options)
+        pubmed_ids, self_data.column_name = search_for_pubmed_ids(search_script, search_term,search_options)
         
         
     else:
         file_path = model_data.get("documents_data")
-        column_name = model_data.get("column_name")
-        pubmed_ids = read_pubmed_ids(file_path, column_name)
+        self_data.column_name = model_data.get("column_name")
+        pubmed_ids = read_pubmed_ids(file_path, self_data.column_name)
  
 
         
@@ -796,5 +852,5 @@ def parse_papers():
 
     print(f"Processing {num_pubmed_ids} documents.")
 
-    processed_documents = process_pubmed_ids(pubmed_ids, sections_to_extract, data_cache_folder)
+    processed_documents = process_pubmed_ids(pubmed_ids, sections_to_extract, self_data.data_cache_folder)
     print(f"Processed {len(processed_documents)} documents.")
