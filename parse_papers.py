@@ -540,6 +540,11 @@ def get_text_from_local(filename):
     return data
 
 def get_pubmed_from_api(pubmed_id):
+    
+    try:
+       import requests
+    except:
+       raise RuntimeError("To use an External PubMed API, requests must be installed.")
     api_url = "https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/" + str(pubmed_id) + "/unicode"
     if "pubmed_url" in model_data:
         api_url = model_data["pubmed_url"] + str(pubmed_id) + "/unicode"

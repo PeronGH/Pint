@@ -1,0 +1,4 @@
+name,system,includeOutput,skipPrompt,skipTest,prompts,
+gene_role,,TRUE,,,"Please answer just this question - based on the following paper, what role was played by the Gene JESEBL (also known as EBA-181 or PF3D7_0102500) ?  The paper is : [paper]",
+check,,,,,Does the following indicate any signficant conclusions or data involving the specified gene?  Answer as Yes or No.  The text is: [reply],"Is this answer affirmative? Give ONLY a one word reply only with no punctuation or other commentary. Any text other than ""Yes"" is assumed to be ""No"".  The answer received is [reply]"
+check,,,#[reply],is_yes,#[cancel],
