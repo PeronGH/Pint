@@ -7,5 +7,5 @@ if __name__ == "__main__":
         config_file = "config.csv"
 
  
-    from parse_papers import parse_papers
+    from .parse_papers import parse_papers
     parse_papers(config_file)

@@ -10,15 +10,15 @@ import re
 
 from types import SimpleNamespace
 
-from model_data import get_model_data
-from model_data import load_model_data
-from prompt_data import get_prompt_data
-from prompt_data import load_prompt_data
-from parse_pubmed_json import parse_pubmed_data
+from .model_data import get_model_data
+from .model_data import load_model_data
+from .prompt_data import get_prompt_data
+from .prompt_data import load_prompt_data
+from .parse_pubmed_json import parse_pubmed_data
 
-from claude_engine import ClaudeEngine
-from open_ai_engine import OpenAIEngine
-from external_engine import ExternalEngine
+from .claude_engine import ClaudeEngine
+from .open_ai_engine import OpenAIEngine
+from .external_engine import ExternalEngine
  
 
 def is_one_token(s):
@@ -126,6 +126,8 @@ def setup_data():
     model_data = get_model_data()
     print(model_data)
     
+    self_data.start_from = model_data.get("start_from",0)
+    self_data.max_docs = model_data.get("max_documents",None)
     self_data.precheck_system = "You are helping to automate a workflow.  You will be asked a question to verify the information you have given. You must only answer the question in EXACTLY the format requested. The answer will only ever be read by a computer, NEVER add any other commentary or automated processing will fail. It is more important to give a correctly formatted answer than to be sure the answer is correct."
     self_data.precheck_system = model_data.get("precheck_system",self_data.precheck_system)
     self_data.max_tokens = model_data.get("max_tokens",DEFAULT_MAX_TOKENS)
@@ -139,6 +141,7 @@ def setup_data():
     if self_data.data_folder == []:
         self_data.data_folder = "."
 
+    self_data.data_folder = resolve_path(self_data.data_folder)
 
     self_data.max_prompt_length = model_data.get("max_prompt_length",DEFAULT_MAX_PROMPT_LENGTH)
     self_data.max_prompt_length = int(self_data.max_prompt_length)
@@ -500,6 +503,7 @@ def get_pubmed_from_local(pubmed_id):
 
 def get_text_from_local(filename):
 
+
     filename = os.path.join(self_data.data_folder,filename)
     
     
@@ -685,6 +689,11 @@ def output_csv(output_data, outputfile):
             normalized_row = {k: normalize_newlines(v) for k, v in row.items()}
             writer.writerow(normalized_row)
 
+def resolve_path(path):
+    """Convert relative paths to absolute, based on working directory."""
+    if not os.path.isabs(path):
+        return os.path.join(model_data["config_root"], path)
+    return path
 
 
 def read_pubmed_ids(file_path, column_name):
@@ -694,6 +703,7 @@ def read_pubmed_ids(file_path, column_name):
     """
     pubmed_ids = []
 
+    file_path = resolve_path(file_path)
  
     if file_path.endswith('.csv'):
         with open(file_path, mode='r', newline='', encoding='utf-8') as csvfile:
@@ -771,13 +781,17 @@ def process_pubmed_ids(pubmed_ids, sections_to_extract, data_folder):
     os.makedirs(output_folder, exist_ok=True)
     
     
-    for pubmed_id in pubmed_ids:
+    for pubmed_id in pubmed_ids[self_data.start_from:]:
         try:
             process_pubmed_id(pubmed_id, processed_documents, sections_to_extract, data_folder)
         except Exception as e:
             print(e)
             print("error with",pubmed_id)
             traceback.print_exc(file=sys.stdout)
+
+        if self_data.max_docs is not None:
+            if len(self_data.final_output) >= self_data.max_docs:
+                break
         if len(self_data.final_output) > 0:
             save_output(self_data.final_output, output_file, output_file_json)
             save_output(self_data.debug, debug_output_file, debug_output_file_json)
@@ -831,7 +845,7 @@ def parse_papers(config_file):
  
 
     load_model_data(config_file)   
-
+    
  
     setup()
     

@@ -43,7 +43,7 @@ class PromptCache:
             return None  # No cached response found
 
 
-    def purge_old_data(cutoff_date, model_engine = None):
+    def purge_old_data(self, cutoff_date, model_engine = None):
         #Removes old rows, optionally a specific model 
  
         with sqlite3.connect(self.db_path) as conn:

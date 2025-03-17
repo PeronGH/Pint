@@ -1,8 +1,8 @@
-import re
+import os
 import csv
 import json
 import openpyxl
-from model_data import get_model_data       
+from .model_data import get_model_data       
 
 
 #parses the prompts spreadsheet into the data format already used
@@ -60,6 +60,14 @@ def read_prompt_tsv(file_path, delimiter='\t'):
     return process_rows(rows, headers)
 
 
+def resolve_path(path):
+    model_data = get_model_data()
+    """Convert relative paths to absolute, based on working directory."""
+    if not os.path.isabs(path):
+        return os.path.join(model_data["config_root"], path)
+    return path
+
+
 
 def read_prompt(file_path):
     if file_path.lower().endswith(".xlsx"):
@@ -73,8 +81,11 @@ prompt_data = None
 def load_prompt_data():
     global prompt_data
     model_data = get_model_data()
-    print("load prompts from",model_data["prompt_data"])
-    prompt_data = read_prompt(model_data["prompt_data"])
+    prompt_data = resolve_path(model_data["prompt_data"])
+    print("load prompts from",prompt_data)
+
+
+    prompt_data = read_prompt(prompt_data)
 
 
 def get_prompt_data():

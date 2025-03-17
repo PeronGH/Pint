@@ -1,4 +1,6 @@
 import csv
+import os
+
 model_data = {}
 
 
@@ -27,6 +29,8 @@ def process_rows(rows):
 def load_model_data(filename):
     global model_data
     model_data = {}
+
+    model_data["config_root"] = os.path.dirname(filename)
 
     if filename.lower().endswith(".csv"):
         with open(filename, "r", newline="") as f:
