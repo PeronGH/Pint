@@ -1,18 +1,70 @@
-Pubmed integrated NLP tool:  For serial processing of open-source PubMed Central papers with an LLM (openai, anthropic's claude or external shell script are supported)
+# PubMed Integrated NLP Tool (PINT)
 
-Configuration is via the Excel file
-Run with 'python run_pint.py <config file>'
-The config file sets many options - the model to use, where to find the data and the prompts, as well as other settings.
+A tool for serial processing of open-source PubMed Central papers with various Large Language Models.
 
-Input is a csv or Excel file with a specified column - either a pubmed id or a filename (assumed if it's not numerical or PMC)
-Output is a csv file with the id and the requested data 
+## Overview
 
-There is a simple example in the example folder which uses .pdf files
+PINT allows you to process academic papers from PubMed using your choice of:
+- OpenAI models
+- Anthropic's Claude
+- External shell script integration
+
+
+## Dependencies
+
+* pdfminer.six - for reading pdf files
+* openpyxl - for reading .xlsx files
+* requests - to use PubMed API
+* anthropic - to use anthropic's Clause API
+* openai - to use OpenAI's ChatGPT API
+
+## Installation
+```bash
+pip install pint_lib
+```
+
+## Basic Installation
+Without dependencies - you can install separately only those you need 
+
+```bash
+pip install pint_lib[base]
+```
+## Usage
+
+```bash
+python -m pint_lib <Config_file>
+```
+
+The configuration file (Excel or CSV format) controls all aspects of processing:
+- Which LLM to use
+- Data source locations
+- Prompt specifications
+- Additional settings
+
+## Input/Output
+
+**Input:**
+- CSV or Excel file with a specified column containing either:
+  - PubMed ID (PMC number)
+  - Filename (if not numerical or PMC format)
+
+**Output:**
+- CSV file containing the ID and requested extracted data
+
+## Example
+
+A simple example using PDF files is provided in the example folder:
+
+```bash
 cd example
-python ../run_pint.py test_config_pdf.xlsx
+python -m pint_lib test_config_pdf.xlsx
+```
 
+## Configuration
 
-You can use .csv files in place of .xlsx files - it's just harder to keep the documents nicely formatted.
+Configuration is handled via Excel or CSV files.  
 
+## Notes
 
-
+- You can substitute CSV files for Excel files throughout, though Excel provides better document formatting.
+```
