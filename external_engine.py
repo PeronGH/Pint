@@ -2,17 +2,17 @@ import os
 import json
 import subprocess
 import hashlib
-from prompt_cache_sqlite import PromptCache  # Import the SQLite-based cache
-from model_data import get_model_data
+from .prompt_cache_sqlite import PromptCache  # Import the SQLite-based cache
+from .model_data import get_model_data
 
  
 class ExternalEngine:
-    def __init__(self, cache_folder="cache"):
+    def __init__(self, cache_folder="cache", max_tokens = 4096):
         """Initialize the engine with caching using SQLite."""
 
         model_data = get_model_data()
         self.cache = PromptCache(cache_folder)  # Use the imported cache class
-
+        self.max_tokens = max_tokens #note not used for external engine
         self.model_engine = model_data["model_name"]
         self.llm_script = model_data.get("llm_script")
         if self.llm_script is None:
