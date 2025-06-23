@@ -1,5 +1,0 @@
-pdfminer.six
-openpyxl
-anthropic
-openai
-requests

@@ -164,5 +164,5 @@ pubmed_data/
 .idea/
 
 # Project-specific files
-/cache/
-/output/
+cache/
+output/
