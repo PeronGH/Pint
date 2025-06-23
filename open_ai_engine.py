@@ -2,9 +2,9 @@ import os
 
 import json
 import hashlib
-from .model_data import get_model_data
+from model_data import get_model_data
 
-from .prompt_cache_sqlite import PromptCache   
+from prompt_cache_sqlite import PromptCache   
 
 
 

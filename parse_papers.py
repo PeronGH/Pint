@@ -10,15 +10,15 @@ import re
 
 from types import SimpleNamespace
 
-from .model_data import get_model_data
-from .model_data import load_model_data
-from .prompt_data import get_prompt_data
-from .prompt_data import load_prompt_data
-from .parse_pubmed_json import parse_pubmed_data
+from model_data import get_model_data
+from model_data import load_model_data
+from prompt_data import get_prompt_data
+from prompt_data import load_prompt_data
+from parse_pubmed_json import parse_pubmed_data
 
-from .claude_engine import ClaudeEngine
-from .open_ai_engine import OpenAIEngine
-from .external_engine import ExternalEngine
+from claude_engine import ClaudeEngine
+from open_ai_engine import OpenAIEngine
+from external_engine import ExternalEngine
  
 
 def is_one_token(s):

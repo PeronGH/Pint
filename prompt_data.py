@@ -2,7 +2,7 @@ import os
 import csv
 import json
 import openpyxl
-from .model_data import get_model_data       
+from model_data import get_model_data       
 
 
 #parses the prompts spreadsheet into the data format already used

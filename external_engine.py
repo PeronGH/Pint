@@ -2,8 +2,8 @@ import os
 import json
 import subprocess
 import hashlib
-from .prompt_cache_sqlite import PromptCache  # Import the SQLite-based cache
-from .model_data import get_model_data
+from prompt_cache_sqlite import PromptCache  # Import the SQLite-based cache
+from model_data import get_model_data
 
  
 class ExternalEngine:
